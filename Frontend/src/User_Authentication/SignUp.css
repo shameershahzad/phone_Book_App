@@ -1,0 +1,19 @@
+body{
+    background-color:#b5cbdf
+}
+
+
+.btnSignUp{
+    height:30px;
+    width:60px;
+    margin-left:130px;
+    cursor:pointer;
+    border-radius:5px;
+    background-color:#007bff;
+    color:white;
+    border: none;
+}
+
+.btnSignUp:hover{
+    background-color:#0056b3
+}

@@ -1,0 +1,28 @@
+.navDiv{
+      background-color: #97c99f;
+   color:#1a1a1a;
+    height:50px;
+    width:50%;
+    border:2px solid #5a8c65;
+    margin-left:350px;
+    display:flex;
+    border-radius:15px;
+    align-items:center;
+    justify-content:space-evenly;
+    font-size:large ;
+    margin-top: 30px;
+}
+
+.btnLogout{
+    height:30px;
+    border-radius:5px;
+    cursor:pointer;
+    border:1px solid gray;
+    width: 60px;
+    
+}
+
+.btnLogout:hover{
+    background-color: rgb(201, 37, 37);
+    color:white
+}

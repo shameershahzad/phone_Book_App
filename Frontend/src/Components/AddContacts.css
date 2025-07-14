@@ -1,0 +1,81 @@
+.divContacts {
+  height: 380px;
+  width: 400px;
+  border: 2px solid #2980b9; /* blue border */
+  border-radius: 10px;
+  margin: 30px auto;
+  padding: 20px;
+  background-color:  #80bde9; /* soft light background */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+}
+
+/* Labels */
+label {
+  margin-left: 30px;
+  font-size: 17px;
+  font-weight: 800;
+  color: #1c1c1c; /* dark gray */
+}
+
+/* Input Fields */
+.input-field {
+  height: 25px;
+  width: 180px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  padding-left: 10px;
+  outline: none;
+  background-color: #ffffff;
+  margin-top: 5px;
+}
+
+/* Save Button */
+.saveBtn {
+  height: 35px;
+  width: 80px;
+  border-radius: 5px;
+  cursor: pointer;
+  border: none;
+  background-color: #28a745; /* green */
+  color: #ffffff;
+  font-weight: bold;
+  margin-left: calc(50% - 40px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.saveBtn:hover {
+  transform: translateY(-3px);
+  background-color: #218838; /* darker green */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .divContacts {
+    width: 90%;
+    height: auto;
+  }
+
+  .input-field {
+    width: 90%;
+    margin-left: 10px;
+    margin-bottom: 10px;
+  }
+
+  textarea {
+    width: 90% !important;
+    margin-left: 10px !important;
+  }
+
+  .saveBtn {
+    margin-left: calc(50% - 40px);
+    margin-top: 10px;
+  }
+
+  label {
+    margin-left: 10px;
+    display: block;
+    margin-bottom: 5px;
+  }
+}
