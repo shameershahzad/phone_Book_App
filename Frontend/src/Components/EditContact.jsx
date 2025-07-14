@@ -24,10 +24,12 @@ useEffect(() => {
     }
   })
   .then(res => {
-    setName(res.data.name);
-    setEmail(res.data.email);
-    setContact(res.data.contact);
-    setAddress(res.data.address);
+    seteditContact({
+    name: res.data.name,
+    email: res.data.email,
+    contact: res.data.contact,
+    address: res.data.address
+  });
   })
   .catch(err => {
     console.log(err);
