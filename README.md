@@ -1,0 +1,1 @@
+This project is a Phone Book application that lets users manage contacts with full CRUD functionality. It uses JWT authentication to secure access, ensuring only authorized users can view or modify contacts.
