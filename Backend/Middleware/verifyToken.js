@@ -17,7 +17,7 @@ const verifyToken = (req, res, next) => {
 
     // Token is valid, continue to the next middleware/route
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({ message: "Invalid Token!" });
   }
 };
