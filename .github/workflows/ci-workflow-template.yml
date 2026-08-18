@@ -1,198 +1,117 @@
-name: Build Lint Test
+name: Sentra CI/CD Pipeline
 
 on:
-  push:
+  pull_request:
 
 concurrency:
-  group: build-lint-test-${{ github.ref }}
+  group: sentra-ci-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
 
   # ============================================================
-  # FRONTEND
+  # 1. GATEWAY
+  # ============================================================
+  # This runs BEFORE the Sentra scan.
+  #
+  # Its only responsibility is to verify that the developer
+  # has configured real build/test/lint commands.
+  #
+  # If "REPLACE ME" still exists, the pipeline stops here.
   # ============================================================
 
-  frontend:
-    name: Frontend Build & Lint
+  gateway:
+    name: Gateway - Verify Pipeline Configured
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for placeholder commands
+        shell: powershell
+        run: |
+          $content = Get-Content .github/workflows/ci-workflow-template.yml -Raw
+
+          $marker = "build_test_lint:"
+          $index = $content.LastIndexOf($marker)
+
+          if ($index -lt 0) {
+            Write-Host "::error::Could not find the build_test_lint job in ci-workflow-template.yml."
+            exit 1
+          }
+
+          $section = $content.Substring($index)
+
+          if ($section -match "REPLACE ME") {
+            Write-Host "::error::This workflow still has placeholder build/test/lint commands."
+            Write-Host "::error::A DevOps engineer must replace them in .github/workflows/ci-workflow-template.yml before this pipeline can run."
+            exit 1
+          }
+
+          Write-Host "Gateway check passed."
+          Write-Host "Build/test/lint commands are configured."
+
+
+  # ============================================================
+  # 2. BUILD / TEST / LINT
+  # ============================================================
+  #
+  # This job ONLY starts when Gateway = PASSED.
+  #
+  # No separate CI-triggered re-scan runs here -- Sentra's own
+  # Create PR flow already verifies every accepted finding was
+  # committed, pushed, and confirmed on GitHub before this PR was
+  # ever opened (see pull_requests.py: _ensure_all_findings_
+  # reviewed + remote_branch_sha verification). Trade-off: a commit
+  # pushed to this PR by someone/something OTHER than Sentra's own
+  # flow (a manual fix, a teammate's push) will NOT be re-scanned
+  # by this pipeline.
+  # ============================================================
+
+  build_test_lint:
+    name: Build, Test & Lint
+    needs: gateway
     runs-on: self-hosted
 
     steps:
 
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-
-      - name: Show frontend npm scripts
+      - name: Run backend build/test/lint
         shell: powershell
-        working-directory: ./frontend
+        working-directory: Backend
         run: |
-          Write-Host "=========================================="
-          Write-Host "Frontend package.json scripts"
-          Write-Host "=========================================="
-
-          npm run
-
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Could not read frontend npm scripts."
-            exit 1
-          }
-
-
-      - name: Install frontend dependencies
-        shell: powershell
-        working-directory: ./frontend
-        run: |
-          Write-Host "=========================================="
-          Write-Host "Installing frontend dependencies"
-          Write-Host "=========================================="
-
+          Write-Host "Installing backend dependencies..."
           npm install
 
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Frontend npm install failed."
-            exit 1
-          }
-
-
-      - name: Build frontend
-        shell: powershell
-        working-directory: ./frontend
-        run: |
-          Write-Host "=========================================="
-          Write-Host "Building frontend"
-          Write-Host "=========================================="
-
-          npm run build
-
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Frontend build failed."
-            exit 1
-          }
-
-          Write-Host "Frontend build passed."
-
-
-      - name: Lint frontend
-        shell: powershell
-        working-directory: ./frontend
-        run: |
-          Write-Host "=========================================="
-          Write-Host "Linting frontend"
-          Write-Host "=========================================="
-
+          Write-Host ""
+          Write-Host "Running backend lint..."
           npm run lint
 
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Frontend lint failed."
-            exit 1
-          }
+          Write-Host ""
+          Write-Host "Running backend tests..."
+          npm test
 
-          Write-Host "Frontend lint passed."
-
-
-  # ============================================================
-  # BACKEND
-  # ============================================================
-
-  backend:
-    name: Backend Build & Lint
-    runs-on: self-hosted
-
-    steps:
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-
-      - name: Show backend npm scripts
+      - name: Run frontend build/test/lint
         shell: powershell
-        working-directory: ./backend
+        working-directory: Frontend
         run: |
-          Write-Host "=========================================="
-          Write-Host "Backend package.json scripts"
-          Write-Host "=========================================="
-
-          npm run
-
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Could not read backend npm scripts."
-            exit 1
-          }
-
-
-      - name: Install backend dependencies
-        shell: powershell
-        working-directory: ./backend
-        run: |
-          Write-Host "=========================================="
-          Write-Host "Installing backend dependencies"
-          Write-Host "=========================================="
-
+          Write-Host "Installing frontend dependencies..."
           npm install
 
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Backend npm install failed."
-            exit 1
-          }
-
-
-      - name: Build backend
-        shell: powershell
-        working-directory: ./backend
-        run: |
-          Write-Host "=========================================="
-          Write-Host "Building backend"
-          Write-Host "=========================================="
-
-          npm run build
-
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Backend build failed."
-            exit 1
-          }
-
-          Write-Host "Backend build passed."
-
-
-      - name: Lint backend
-        shell: powershell
-        working-directory: ./backend
-        run: |
-          Write-Host "=========================================="
-          Write-Host "Linting backend"
-          Write-Host "=========================================="
-
+          Write-Host ""
+          Write-Host "Running frontend lint..."
           npm run lint
 
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Backend lint failed."
-            exit 1
-          }
+          Write-Host ""
+          Write-Host "Running frontend build..."
+          npm run build
 
-          Write-Host "Backend lint passed."
+          Write-Host ""
+          Write-Host "Running frontend tests..."
+          npm test
 
-
-  # ============================================================
-  # FINAL RESULT
-  # ============================================================
-
-  ci_success:
-    name: Build & Lint Passed
-    needs:
-      - frontend
-      - backend
-    runs-on: self-hosted
-
-    steps:
-
-      - name: Success
-        shell: powershell
-        run: |
           Write-Host ""
           Write-Host "=========================================="
-          Write-Host "BUILD / LINT PASSED"
-          Write-Host "=========================================="
-          Write-Host "Frontend: PASSED"
-          Write-Host "Backend: PASSED"
+          Write-Host "Build / Lint / Test PASSED"
           Write-Host "=========================================="
