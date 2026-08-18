@@ -2,7 +2,7 @@
 const mongoose = require("mongoose")
 const cors = require("cors")
 const UserModel = require("./Model/User")
-const express = require("express")
+
 const mongoose = require("mongoose")
 const cors = require("cors")
 const UserModel = require("./Model/User")
