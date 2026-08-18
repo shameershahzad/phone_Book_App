@@ -54,6 +54,20 @@ UserModel.findOne({ email })
       }
 
       //  Create token and return
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" }); //.sign() generate token
+
+      return res.json({ message: "Success", token }); 
+    })
+    .then(user => {
+      if (!user) {
+        return res.json({ message: "No user found" }); 
+      }
+
+      if (user.password !== password) {
+        return res.json({ message: "Password is incorrect" }); 
+      }
+
+      //  Create token and return
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" }); // .sign() generate token
 
       return res.json({ message: "Success", token }); 
