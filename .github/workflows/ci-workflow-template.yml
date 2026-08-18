@@ -53,24 +53,183 @@ jobs:
 
 
   # ============================================================
-  # 2. BUILD / TEST / LINT
+  # 2. SENTRA SECURITY RE-SCAN
   # ============================================================
   #
-  # This job ONLY starts when Gateway = PASSED.
+  # This job starts ONLY after Gateway succeeds.
   #
-  # No separate CI-triggered re-scan runs here -- Sentra's own
-  # Create PR flow already verifies every accepted finding was
-  # committed, pushed, and confirmed on GitHub before this PR was
-  # ever opened (see pull_requests.py: _ensure_all_findings_
-  # reviewed + remote_branch_sha verification). Trade-off: a commit
-  # pushed to this PR by someone/something OTHER than Sentra's own
-  # flow (a manual fix, a teammate's push) will NOT be re-scanned
-  # by this pipeline.
+  # It waits indefinitely for Sentra.
+  #
+  # If:
+  #   - scan fails             -> pipeline fails
+  #   - vulnerabilities > 0   -> pipeline fails
+  #   - vulnerabilities = 0   -> continue to build/test/lint
+  #
+  # There is intentionally NO 10-minute timeout here.
+  # ============================================================
+
+  rescan:
+    name: Sentra Blind Re-scan
+    needs: gateway
+    runs-on: self-hosted
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Trigger Sentra re-scan
+        id: trigger
+        shell: powershell
+        run: |
+
+          $body = @{
+            pr_number = ${{ github.event.pull_request.number }}
+          } | ConvertTo-Json
+
+          Write-Host "Starting Sentra blind re-scan..."
+
+          $response = Invoke-RestMethod `
+            -Uri "http://localhost:8000/api/projects/${{ vars.SENTRA_PROJECT_ID }}/ci-rescan-for-pr" `
+            -Method POST `
+            -Headers @{
+              "X-Sentra-Api-Key" = "${{ secrets.SENTRA_API_KEY }}"
+            } `
+            -ContentType "application/json" `
+            -Body $body
+
+          if (-not $response.scan_id) {
+            Write-Host "::error::Sentra did not return a scan ID."
+            exit 1
+          }
+
+          Write-Host "Sentra scan started."
+          Write-Host "Scan ID: $($response.scan_id)"
+
+          "scan_id=$($response.scan_id)" >> $env:GITHUB_OUTPUT
+
+
+      # ------------------------------------------------------------
+      # WAIT FOR SENTRA
+      # ------------------------------------------------------------
+
+      - name: Wait for Sentra scan to complete
+        shell: powershell
+        run: |
+
+          $scanId = "${{ steps.trigger.outputs.scan_id }}"
+
+          Write-Host "Waiting for Sentra scan: $scanId"
+          Write-Host "The pipeline will wait until Sentra finishes."
+
+          while ($true) {
+
+            try {
+
+              $status = Invoke-RestMethod `
+                -Uri "http://localhost:8000/api/projects/${{ vars.SENTRA_PROJECT_ID }}/ci-scan-status/$scanId" `
+                -Headers @{
+                  "X-Sentra-Api-Key" = "${{ secrets.SENTRA_API_KEY }}"
+                }
+
+              Write-Host ""
+              Write-Host "=========================================="
+              Write-Host "Sentra Scan Status: $($status.status)"
+              Write-Host "Open Vulnerabilities: $($status.total_findings)"
+              Write-Host "=========================================="
+              Write-Host ""
+
+            }
+            catch {
+
+              Write-Host "::warning::Could not get Sentra scan status. Retrying..."
+              Write-Host "Error: $($_.Exception.Message)"
+
+              Start-Sleep -Seconds 10
+              continue
+            }
+
+
+            # ------------------------------------------------------
+            # SENTRA FAILED
+            # ------------------------------------------------------
+
+            if ($status.status -eq "failed") {
+
+              Write-Host "::error::Sentra security scan failed."
+              Write-Host "::error::Build, lint and test will NOT run."
+
+              exit 1
+            }
+
+
+            # ------------------------------------------------------
+            # SENTRA COMPLETED
+            # ------------------------------------------------------
+
+            if ($status.status -eq "completed") {
+
+              Write-Host "Sentra security scan completed."
+
+              $findings = [int]$status.total_findings
+
+              Write-Host "Total unresolved vulnerabilities: $findings"
+
+
+              # ----------------------------------------------------
+              # VULNERABILITIES FOUND
+              # ----------------------------------------------------
+
+              if ($findings -gt 0) {
+
+                Write-Host "::error::Sentra found $findings unresolved vulnerabilities."
+                Write-Host "::error::Fix all vulnerabilities before build, lint and test can run."
+
+                exit 1
+              }
+
+
+              # ----------------------------------------------------
+              # NO VULNERABILITIES
+              # ----------------------------------------------------
+
+              Write-Host ""
+              Write-Host "=========================================="
+              Write-Host "Sentra Security Gate PASSED"
+              Write-Host "No unresolved vulnerabilities found."
+              Write-Host "Build/Test/Lint may now run."
+              Write-Host "=========================================="
+              Write-Host ""
+
+              break
+            }
+
+
+            # ------------------------------------------------------
+            # STILL RUNNING / QUEUED
+            # ------------------------------------------------------
+
+            Write-Host "Sentra scan is still running..."
+            Write-Host "Checking again in 10 seconds."
+
+            Start-Sleep -Seconds 10
+          }
+
+
+  # ============================================================
+  # 3. BUILD / TEST / LINT
+  # ============================================================
+  #
+  # This job ONLY starts when:
+  #
+  #   Gateway       = PASSED
+  #   Sentra scan   = COMPLETED
+  #   Open findings = 0
+  #
   # ============================================================
 
   build_test_lint:
     name: Build, Test & Lint
-    needs: gateway
+    needs: rescan
     runs-on: self-hosted
 
     steps:
