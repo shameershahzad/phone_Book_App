@@ -8,50 +8,108 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build_test:
-    name: Build & Test
+
+  # ============================================================
+  # FRONTEND
+  # ============================================================
+
+  frontend:
+    name: Frontend Build & Test
     runs-on: self-hosted
 
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
         shell: powershell
+        working-directory: ./frontend
         run: |
-          Write-Host "Installing dependencies..."
+          Write-Host "Installing frontend dependencies..."
+
           npm install
 
           if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::npm install failed."
+            Write-Host "::error::Frontend npm install failed."
             exit 1
           }
 
-      - name: Build
+      - name: Build frontend
         shell: powershell
+        working-directory: ./frontend
         run: |
-          Write-Host "Running build..."
+          Write-Host "Building frontend..."
+
           npm run build
 
           if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Build failed."
+            Write-Host "::error::Frontend build failed."
             exit 1
           }
 
-      - name: Test
+      - name: Test frontend
         shell: powershell
+        working-directory: ./frontend
         run: |
-          Write-Host "Running tests..."
+          Write-Host "Testing frontend..."
+
           npm test
 
           if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Tests failed."
+            Write-Host "::error::Frontend tests failed."
             exit 1
           }
 
-      - name: Success
+
+  # ============================================================
+  # BACKEND
+  # ============================================================
+
+  backend:
+    name: Backend Build & Test
+    runs-on: self-hosted
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install backend dependencies
         shell: powershell
+        working-directory: ./backend
         run: |
-          Write-Host "=========================================="
-          Write-Host "BUILD & TEST PASSED"
-          Write-Host "=========================================="
+          Write-Host "Installing backend dependencies..."
+
+          npm install
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::Backend npm install failed."
+            exit 1
+          }
+
+      - name: Build backend
+        shell: powershell
+        working-directory: ./backend
+        run: |
+          Write-Host "Building backend..."
+
+          npm run build
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::Backend build failed."
+            exit 1
+          }
+
+      - name: Test backend
+        shell: powershell
+        working-directory: ./backend
+        run: |
+          Write-Host "Testing backend..."
+
+          npm test
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::Backend tests failed."
+            exit 1
+          }
