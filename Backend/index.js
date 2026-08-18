@@ -1,8 +1,37 @@
-  const express = require("express")
+const express = require("express")
 const mongoose = require("mongoose")
 const cors = require("cors")
 const UserModel = require("./Model/User")
+const cors = require("cors")
+const UserModel = require("./Model/User")
 const app = express()
+const csrf = require('csurf');
+app.use(csrf);
+const ContactModel = require('./Model/Contact')
+const verifyToken = require("./Middleware/verifyToken")
+// JWT contain three parts header,userId,signature and we verify with '.'
+const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose")
+const cors = require("cors")
+const UserModel = require("./Model/User")
+const csurf = require('csurf');
+const app = express()
+app.use(csurf());
+const ContactModel = require('./Model/Contact')
+const verifyToken = require("./Middleware/verifyToken")
+// JWT contain three parts header,userId,signature and we verify with '.'
+const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose")
+const cors = require("cors")
+const csrf = require('csurf');
+const UserModel = require("./Model/User")
+const app = express()
+const ContactModel = require('./Model/Contact')
+const verifyToken = require("./Middleware/verifyToken")
+// JWT contain three parts header,userId,signature and we verify with '.'
+const jwt = require("jsonwebtoken");
+
+app.use(csrf());
 const ContactModel = require('./Model/Contact')
 const verifyToken = require("./Middleware/verifyToken")
 // JWT contain three parts header,userId,signature and we verify with '.'
@@ -43,7 +72,49 @@ app.post("/", (req, res) => {
       }
 
       //  Create token and return
-      const token = jwt.sign({ id: user._id }, "Your Secret Key", { expiresIn: "1h" }); //.sign() generate token
+UserModel.findOne({ email })
+    .then(user => {
+      if (!user) {
+        return res.json({ message: "No user found" }); 
+      }
+
+      if (user.password !== password) {
+        return res.json({ message: "Password is incorrect" }); 
+      }
+
+      //  Create token and return
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" }); //.sign() generate token
+
+      return res.json({ message: "Success", token }); 
+    })
+    .then(user => {
+      if (!user) {
+        return res.json({ message: "No user found" }); 
+      }
+
+      if (user.password !== password) {
+        return res.json({ message: "Password is incorrect" }); 
+      }
+
+      //  Create token and return
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" }); //.sign() generate token
+
+      return res.json({ message: "Success", token }); 
+    })
+    .then(user => {
+      if (!user) {
+        return res.json({ message: "No user found" }); 
+      }
+
+      if (user.password !== password) {
+        return res.json({ message: "Password is incorrect" }); 
+      }
+
+      //  Create token and return
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" }); // .sign() generate token
+
+      return res.json({ message: "Success", token }); 
+    })
 
       return res.json({ message: "Success", token }); 
     })

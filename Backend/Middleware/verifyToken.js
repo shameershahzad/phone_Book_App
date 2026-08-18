@@ -8,13 +8,16 @@ const verifyToken = (req, res, next) => {
     return res.status(403).json({ message: "No token provided" });
   }
 
-  const token = authHeader.split(" ")[1]; // remove "Bearer "
+  const token = authHeader.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, "Your Secret Key");// usually it contain user_id not all data
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
     req.userId = decoded.id;
-    next(); // This means everything is okay — go to the next step (like adding contact). 
-  } catch (err) {
+
+    // Token is valid, continue to the next middleware/route
+    next();
+  } catch {
     return res.status(401).json({ message: "Invalid Token!" });
   }
 };
