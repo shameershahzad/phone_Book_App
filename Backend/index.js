@@ -6,6 +6,16 @@ const express = require("express")
 const mongoose = require("mongoose")
 const cors = require("cors")
 const UserModel = require("./Model/User")
+const app = express()
+const csrf = require('csurf');
+app.use(csrf);
+const ContactModel = require('./Model/Contact')
+const verifyToken = require("./Middleware/verifyToken")
+// JWT contain three parts header,userId,signature and we verify with '.'
+const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose")
+const cors = require("cors")
+const UserModel = require("./Model/User")
 const csurf = require('csurf');
 const app = express()
 app.use(csurf());
