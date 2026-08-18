@@ -1,9 +1,7 @@
-  const express = require("express")
+const express = require("express")
 const mongoose = require("mongoose")
 const cors = require("cors")
 const UserModel = require("./Model/User")
-
-const mongoose = require("mongoose")
 const cors = require("cors")
 const UserModel = require("./Model/User")
 const app = express()
