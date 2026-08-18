@@ -1,10 +1,10 @@
-name: Build & Test
+name: Build Lint Test
 
 on:
   push:
 
 concurrency:
-  group: build-test-${{ github.ref }}
+  group: build-lint-test-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -14,7 +14,7 @@ jobs:
   # ============================================================
 
   frontend:
-    name: Frontend Build & Test
+    name: Frontend Build & Lint
     runs-on: self-hosted
 
     steps:
@@ -22,11 +22,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+
+      - name: Show frontend npm scripts
+        shell: powershell
+        working-directory: ./frontend
+        run: |
+          Write-Host "=========================================="
+          Write-Host "Frontend package.json scripts"
+          Write-Host "=========================================="
+
+          npm run
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::Could not read frontend npm scripts."
+            exit 1
+          }
+
+
       - name: Install frontend dependencies
         shell: powershell
         working-directory: ./frontend
         run: |
-          Write-Host "Installing frontend dependencies..."
+          Write-Host "=========================================="
+          Write-Host "Installing frontend dependencies"
+          Write-Host "=========================================="
 
           npm install
 
@@ -35,11 +54,14 @@ jobs:
             exit 1
           }
 
+
       - name: Build frontend
         shell: powershell
         working-directory: ./frontend
         run: |
-          Write-Host "Building frontend..."
+          Write-Host "=========================================="
+          Write-Host "Building frontend"
+          Write-Host "=========================================="
 
           npm run build
 
@@ -48,18 +70,25 @@ jobs:
             exit 1
           }
 
-      - name: Test frontend
+          Write-Host "Frontend build passed."
+
+
+      - name: Lint frontend
         shell: powershell
         working-directory: ./frontend
         run: |
-          Write-Host "Testing frontend..."
+          Write-Host "=========================================="
+          Write-Host "Linting frontend"
+          Write-Host "=========================================="
 
-          npm test
+          npm run lint
 
           if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Frontend tests failed."
+            Write-Host "::error::Frontend lint failed."
             exit 1
           }
+
+          Write-Host "Frontend lint passed."
 
 
   # ============================================================
@@ -67,7 +96,7 @@ jobs:
   # ============================================================
 
   backend:
-    name: Backend Build & Test
+    name: Backend Build & Lint
     runs-on: self-hosted
 
     steps:
@@ -75,11 +104,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+
+      - name: Show backend npm scripts
+        shell: powershell
+        working-directory: ./backend
+        run: |
+          Write-Host "=========================================="
+          Write-Host "Backend package.json scripts"
+          Write-Host "=========================================="
+
+          npm run
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::Could not read backend npm scripts."
+            exit 1
+          }
+
+
       - name: Install backend dependencies
         shell: powershell
         working-directory: ./backend
         run: |
-          Write-Host "Installing backend dependencies..."
+          Write-Host "=========================================="
+          Write-Host "Installing backend dependencies"
+          Write-Host "=========================================="
 
           npm install
 
@@ -88,11 +136,14 @@ jobs:
             exit 1
           }
 
+
       - name: Build backend
         shell: powershell
         working-directory: ./backend
         run: |
-          Write-Host "Building backend..."
+          Write-Host "=========================================="
+          Write-Host "Building backend"
+          Write-Host "=========================================="
 
           npm run build
 
@@ -101,15 +152,47 @@ jobs:
             exit 1
           }
 
-      - name: Test backend
+          Write-Host "Backend build passed."
+
+
+      - name: Lint backend
         shell: powershell
         working-directory: ./backend
         run: |
-          Write-Host "Testing backend..."
+          Write-Host "=========================================="
+          Write-Host "Linting backend"
+          Write-Host "=========================================="
 
-          npm test
+          npm run lint
 
           if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Backend tests failed."
+            Write-Host "::error::Backend lint failed."
             exit 1
           }
+
+          Write-Host "Backend lint passed."
+
+
+  # ============================================================
+  # FINAL RESULT
+  # ============================================================
+
+  ci_success:
+    name: Build & Lint Passed
+    needs:
+      - frontend
+      - backend
+    runs-on: self-hosted
+
+    steps:
+
+      - name: Success
+        shell: powershell
+        run: |
+          Write-Host ""
+          Write-Host "=========================================="
+          Write-Host "BUILD / LINT PASSED"
+          Write-Host "=========================================="
+          Write-Host "Frontend: PASSED"
+          Write-Host "Backend: PASSED"
+          Write-Host "=========================================="
